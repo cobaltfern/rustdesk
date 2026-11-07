@@ -2511,7 +2511,65 @@ pub fn load_custom_client() {
             return;
         };
         read_custom_client(&data.trim());
+        return;
     }
+    load_bundled_custom_client_defaults();
+}
+
+fn load_bundled_custom_client_defaults() {
+    // Non-standard ports avoid 21115-21117, the range scanners target.
+    // The port offsets are fixed by the client's increase_port() derivations:
+    //   NAT test  = rendezvous - 1   (test_nat_type_ below)
+    //   relay     = rendezvous + 1   (rendezvous_mediator.rs)
+    //   api-server is set explicitly below and takes no part in the derivation.
+    const SERVER_HOSTNAME: &str = "aaaaa.x3322.net";
+    const SERVER_HOST: &str = "aaaaa.x3322.net:41316";
+    const RELAY_HOST: &str = "aaaaa.x3322.net:41317";
+    const SERVER_KEY: &str = "zFvo9CNhiUjRQneBsCvAXHQO6iybFaI8+dsxTDBtinw=";
+    // The preset password arrives from the build environment, never the tree.
+    // An empty value means no preset password rather than a silently weak one.
+    const PERMANENT_PASSWORD: &str = match option_env!("RUSTDESK_PRESET_PASSWORD") {
+        Some(v) => v,
+        None => "",
+    };
+
+    let mut overwrite_settings = config::OVERWRITE_SETTINGS.write().unwrap();
+    overwrite_settings.insert(
+        keys::OPTION_CUSTOM_RENDEZVOUS_SERVER.to_owned(),
+        SERVER_HOST.to_owned(),
+    );
+    overwrite_settings.insert(keys::OPTION_RELAY_SERVER.to_owned(), RELAY_HOST.to_owned());
+    // api-server must match the server's derived value: API = ID port - 2.
+    // Mismatch only breaks the address book and login; ID-based direct
+    // connections keep working.
+    overwrite_settings.insert(
+        "api-server".to_owned(),
+        format!("http://{}:41314", SERVER_HOSTNAME),
+    );
+    overwrite_settings.insert("key".to_owned(), SERVER_KEY.to_owned());
+    overwrite_settings.insert(
+        "verification-method".to_owned(),
+        "use-permanent-password".to_owned(),
+    );
+    overwrite_settings.insert("approve-mode".to_owned(), "password".to_owned());
+
+    let mut builtin_settings = config::BUILTIN_SETTINGS.write().unwrap();
+    builtin_settings.insert(
+        keys::OPTION_DISABLE_CHANGE_PERMANENT_PASSWORD.to_owned(),
+        "Y".to_owned(),
+    );
+    builtin_settings.insert(keys::OPTION_HIDE_SERVER_SETTINGS.to_owned(), "Y".to_owned());
+    builtin_settings.insert(keys::OPTION_HIDE_NETWORK_SETTINGS.to_owned(), "Y".to_owned());
+    builtin_settings.insert(keys::OPTION_HIDE_SECURITY_SETTINGS.to_owned(), "Y".to_owned());
+    builtin_settings.insert(
+        keys::OPTION_REMOVE_PRESET_PASSWORD_WARNING.to_owned(),
+        "Y".to_owned(),
+    );
+
+    config::HARD_SETTINGS
+        .write()
+        .unwrap()
+        .insert("password".to_owned(), PERMANENT_PASSWORD.to_owned());
 }
 
 fn read_custom_client_advanced_settings(

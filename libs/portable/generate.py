@@ -84,14 +84,19 @@ def write_app_metadata(output_folder: str):
         f.write(f"timestamp = {int(datetime.datetime.now().timestamp() * 1000)}\n")
     print(f"App metadata has been written to {output_path}")
 
-def build_portable(output_folder: str, target: str):
+def build_portable(output_folder: str, target: str, require_admin: bool = False):
     current_dir = os.getcwd()
     try:
         os.chdir(output_folder)
         cmd = ["cargo", "build", "--locked", "--release"]
         if target:
             cmd.extend(["--target", target])
-        subprocess.run(cmd, check=True)
+        env = dict(os.environ)
+        if require_admin:
+            env["RUSTDESK_PORTABLE_REQUIRE_ADMIN"] = "1"
+        else:
+            env.pop("RUSTDESK_PORTABLE_REQUIRE_ADMIN", None)
+        subprocess.run(cmd, check=True, env=env)
     finally:
         os.chdir(current_dir)
 
@@ -119,6 +124,8 @@ if __name__ == '__main__':
                       default=False,
                       help="omit the executable from the blob, for a template whose "
                            "executable ships in the package instead")
+    parser.add_option("--require-admin", action="store_true", dest="require_admin",
+                      help="embed a Windows manifest that requests administrator privileges", default=False)
     (options, args) = parser.parse_args()
     folder = options.folder or './rustdesk'
     output_folder = os.path.abspath(options.output_folder or './')
@@ -152,4 +159,4 @@ if __name__ == '__main__':
     else:
         write_package_metadata(md5_table, output_folder, exe)
         write_app_metadata(output_folder)
-        build_portable(output_folder, options.target)
+        build_portable(output_folder, options.target, options.require_admin)
