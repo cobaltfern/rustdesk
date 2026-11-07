@@ -1,6 +1,0 @@
-name: caller bridge probe
-on:
-  workflow_dispatch:
-jobs:
-  a:
-    uses: ./.github/workflows/bridge.yml

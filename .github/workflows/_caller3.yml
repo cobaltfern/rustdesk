@@ -1,9 +1,0 @@
-name: caller flutter probe
-on:
-  workflow_dispatch:
-jobs:
-  a:
-    uses: ./.github/workflows/flutter-build.yml
-    secrets: inherit
-    with:
-      upload-artifact: false
