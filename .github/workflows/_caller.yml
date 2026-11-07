@@ -1,0 +1,6 @@
+name: caller probe
+on:
+  workflow_dispatch:
+jobs:
+  outer:
+    uses: ./.github/workflows/_reuse.yml
