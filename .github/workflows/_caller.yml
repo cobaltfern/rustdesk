@@ -1,6 +1,6 @@
-name: caller probe
+name: caller bridge probe
 on:
   workflow_dispatch:
 jobs:
-  outer:
-    uses: ./.github/workflows/_reuse.yml
+  a:
+    uses: ./.github/workflows/bridge.yml
